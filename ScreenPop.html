@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html dir="ltr" lang="en">
+<head>
+
+	<meta charset="utf-8">
+	<title>Whitepages PRO Screen Pop</title>
+
+	<script>
+		if (!window.console) {
+			window.console = {
+				log: function() {},
+				warn: function() {},
+				error: function() {}
+			};
+		}
+	</script>
+
+	<link rel="stylesheet" type="text/css" href="ScreenPop.css"></link> 
+
+	<script src="jquery-1.9.1.min.js"></script>
+	
+	<!-- React -->
+    <script type="text/javascript" src="react-0.13.3/build/react.js"></script>
+    <script type="text/javascript" src="react-0.13.3/build/JSXTransformer.js"></script>
+	
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAGEYK30LIBhct6fXDUBRjunTLZjpRk7-4" async defer></script>
+
+    <!-- Finesse JS Convenience library -->
+    <script src="finn-all-10.5.1-ES3.js"></script>
+
+	<script type="text/javascript">
+
+		var wpProApiKey = "";
+		var devMode = false;
+		var finn = {};
+		
+		var currentCallInfo = null;
+		
+		function handleWhitepagesResponse(rsp) {
+			if (!rsp || rsp.rc > 299) {
+                console.error("Error retrieving caller info: " + rsp.text);
+				return;
+            }
+           
+            var data = JSON.parse(rsp.text);
+			console.log(data);
+			
+			currentCallInfo = data;
+			render();
+		}
+		
+		function testPop () {
+			var number = $("#test-number").val();
+			pop(number);
+		}
+
+		function pop(number) {
+			finn.log("POP! POP!");
+			
+			var url = "http://proapi.whitepages.com/2.1/phone.json?api_key=" + wpProApiKey + "&response_type=callerid&phone_number=";
+			url += number;
+			//document.getElementById("whitepages").src = "https://pro.lookup.whitepages.com/phones?number=" + value;
+			//popWrapper();
+			
+			var params = {};
+            params[gadgets.io.RequestParameters.METHOD] = 'GET';
+            gadgets.io.makeRequest(url, handleWhitepagesResponse, params);
+			
+			/*
+			$.support.cors = true;
+			$.ajax({
+				type: "GET",
+				url: url,
+				dataType: 'json',
+				contentType: 'application/json'
+			})
+			.done(function(data) {   
+				console.log(data)
+			})
+			.fail(function(err) {
+				console.error(JSON.stringify(err));
+			}) */ 
+
+		}
+		
+		$(document).ready(function() {
+			$("#test-tools").hide();
+			$(parent.document.getElementById(window.name).parentNode.parentNode).css("padding", "0px");
+					
+			finn = new Finn("Whitepages PRO ScreenPop");
+
+			finn.load(function(agent) {
+				wpProApiKey = finn.container.getParameter("apiKey");
+				devMode = (finn.container.getParameter("devMode").toLowerCase() == "true");
+				if (devMode) {
+					finn.container.addDevToolsToGadget();
+					$("#test-tools").show();
+				}
+				render();
+				finn.log("Finesse loaded.");
+
+				finn.on('call started', handleCallStarted);
+			});
+		});
+
+		function handleCallStarted(call) {
+			if (call.fromAddress) {
+				pop(call.fromAddress);
+			}
+		}
+		
+		
+	</script>
+
+</head>
+
+<body>
+
+		<div id="test-tools">
+			<input type="text" id="test-number" value=""></input>
+			<button id="pop-button" onclick="testPop();">Pop</button>
+		</div>
+		
+		<div id="pop-container"/>
+		<!-- iframe src="https://pro.lookup.whitepages.com/phones" id="whitepages"></iframe -->
+
+		<script type="text/jsx">
+		
+			
+			function render() {
+				React.render(
+					<Whitepages callInfo={currentCallInfo} />, 
+					document.getElementById("pop-container")
+				);
+			}
+		
+			var Whitepages = React.createClass({
+			
+				componentDidUpdate: function() {
+					if (!this.props.callInfo)
+						return;
+					
+					var lat = this.props.callInfo.results[0].best_location.lat_long.latitude;
+					var long = this.props.callInfo.results[0].best_location.lat_long.longitude;
+			
+					map = new google.maps.Map(document.getElementById("location-map"), {
+						scrollwheel: false,
+						// Adjust latitude slightly since we scroll the map down a bit.
+						center: {lat: lat + 0.14, lng: long},
+						zoom: 10
+					});
+					
+					var marker = new google.maps.Marker({
+						position: {lat: lat, lng: long},
+						map: map,
+						title: "Location"
+					});
+					
+					$("#details").scrollTop(259);
+				},
+			
+				render: function() {
+					if (!this.props.callInfo)
+						return <div id="summary"></div>
+						
+					var name = "Unknown";
+					var gender = null;
+					var ageStart = null;
+					var ageEnd = null;
+					var demographics = "Unknown";
+					if (this.props.callInfo.results[0].belongs_to[0]) {
+						name = this.props.callInfo.results[0].belongs_to[0].best_name ||
+								this.props.callInfo.results[0].belongs_to[0].name;
+						gender = this.props.callInfo.results[0].belongs_to[0].gender;
+						ageStart = this.props.callInfo.results[0].belongs_to[0].age_range.start;
+						ageEnd = this.props.callInfo.results[0].belongs_to[0].age_range.end;
+						
+						demographics = gender + ", " + ageStart + "-" + ageEnd;
+					}
+					var city = this.props.callInfo.results[0].best_location.city;
+					var address = this.props.callInfo.results[0].best_location.address;
+					address = address.replace(/,/g, ',<br/>');
+					
+					var receivingMailText = "No";
+					if (this.props.callInfo.results[0].best_location.is_receiving_mail) {
+						receivingMailText = "Yes";
+					}
+					var usage = this.props.callInfo.results[0].best_location.usage;
+					var deliveryPoint = this.props.callInfo.results[0].best_location.delivery_point;
+					
+					var stateCode = this.props.callInfo.results[0].best_location.state_code;
+					var spamLevel = this.props.callInfo.results[0].reputation.level;
+					var spamLevelText = "Not Spam";
+					
+					var lineType = this.props.callInfo.results[0].line_type;
+					var carrier = this.props.callInfo.results[0].carrier;
+					var doNotCallText = "Not Registered"; 
+					if (this.props.callInfo.results[0].do_not_call) {
+						doNotCallText = "Registered";
+					}
+					
+					switch(spamLevel) {
+						case 1:
+							spamLevelText = "Not Spam";
+							break;
+						case 2:
+							spamLevelText = "Low";
+							break;
+						case 3:
+							spamLevelText = "Mid";
+							break;
+						case 4:
+							spamLevelText = "High";
+							break;
+					}
+					
+					return <div id="content">
+						<div id="powered-by">
+							<div id="powered-by-text">Powered by</div>
+							<img alt="Whitepages Pro" width="90" 
+								data-svg-fallback="https://cdnproweb.global.ssl.fastly.net/assets/pro_logo-ae5b793f453a989ca8bdb633ed7c41a9.png"
+								src="https://cdnproweb.global.ssl.fastly.net/assets/pro_logo-06126de9a4c3cd95e053c78cf56d3232.svg"
+							></img>
+						</div>
+						<div id="summary">
+							<div id="summary-header">
+								<div id="summary-name">{name}</div>
+								<div id="summary-location">
+									<span className="icon pin-filled" id="summary-location-icon"></span>
+									<span>{city}, {stateCode}</span>
+								</div>
+							</div>
+							
+							<div id="summary-content">
+								<div className="summary-info-section">
+									<div className="summary-info">
+										<div className="summary-info-heading">Spam Score</div>
+										<div className="summary-info-text">{spamLevel} ({spamLevelText})</div>
+									</div>
+									<div className="summary-info-image">
+										<span className={"spam-gauge level-" + spamLevel}></span>
+									</div>
+								</div>
+								
+								<div className="summary-info-section">
+									<div className="summary-info">
+										<div className="summary-info-heading">Phone</div>
+										<div className="summary-info-text">{lineType} ({carrier})</div>
+									</div>
+								</div>
+								
+								<div className="summary-info-section">
+									<div className="summary-info">
+										<div className="summary-info-heading">Demographic</div>
+										<div className="summary-info-text">{demographics}</div>
+									</div>
+								</div>
+								
+							</div>
+						</div>
+						<div id="details">
+							<div id="location-map">
+							</div>
+							
+							<div className="detail-section">
+								<div className="detail-heading">
+									<span className="icon pin detail-icon" id="detail-location-icon"></span>
+									<div className="detail-heading-label">Location</div>
+								</div>
+								<div className="detail-info">
+									<div className="detail-label">
+										Address
+									</div>
+									<div className="detail-value" dangerouslySetInnerHTML={{__html: address}}>
+										
+									</div>
+								</div>
+								<div className="detail-info">
+									<div className="detail-label">
+										Receiving Mail
+									</div>
+									<div className="detail-value">
+										{receivingMailText}
+									</div>
+								</div>
+								<div className="detail-info">
+									<div className="detail-label">
+										Usage
+									</div>
+									<div className="detail-value">
+										{usage}
+									</div>
+								</div>
+								<div className="detail-info">
+									<div className="detail-label">
+										Delivery Point
+									</div>
+									<div className="detail-value">
+										{deliveryPoint}
+									</div>
+								</div>
+							</div>
+							
+							<div className="detail-section">
+								<div className="detail-heading">
+									<span className="icon phone detail-icon" id="detail-phone-icon"></span>
+									<div className="detail-heading-label">Phone</div>
+								</div>
+								<div className="detail-info">
+									<div className="detail-label">
+										Type
+									</div>
+									<div className="detail-value">
+										{lineType}
+									</div>
+								</div>
+								<div className="detail-info">
+									<div className="detail-label">
+										Carrier
+									</div>
+									<div className="detail-value">
+										{carrier}
+									</div>
+								</div>
+								<div className="detail-info">
+									<div className="detail-label">
+										Do Not Call Registry
+									</div>
+									<div className="detail-value">
+										{doNotCallText}
+									</div>
+								</div>							
+							</div>
+							
+						</div>					
+					</div>
+				}
+			});
+
+		</script>	
+</body>
+
+</html>

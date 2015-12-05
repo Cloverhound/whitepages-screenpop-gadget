@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module>
+
+    <ModulePrefs title="Caller Info"
+            description="Caller Information providied by Whitepages PRO API"
+            height="400">
+
+        <Require feature="settitle" />
+        <Require feature="dynamic-height" />
+        <Require feature="pubsub-2" />
+    	<Require feature="setprefs" />
+
+        <Optional feature="content-rewrite">
+            <Param name="exclude-url">*</Param>
+        </Optional>
+    </ModulePrefs>
+
+    <Content type="html" href="ScreenPop.html"></Content>
+</Module>
