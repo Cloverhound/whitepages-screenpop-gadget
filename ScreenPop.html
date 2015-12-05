@@ -186,14 +186,24 @@
 						receivingMailText = "Yes";
 					}
 					var usage = this.props.callInfo.results[0].best_location.usage;
+					if (usage) {
+						usage = usage.replace(/([a-z])([A-Z])/g, '$1 $2');
+					}
+	
 					var deliveryPoint = this.props.callInfo.results[0].best_location.delivery_point;
+					if (deliveryPoint) {
+						deliveryPoint = deliveryPoint.replace(/([a-z])([A-Z])/g, '$1 $2');
+					}
 					
 					var stateCode = this.props.callInfo.results[0].best_location.state_code;
 					var spamLevel = this.props.callInfo.results[0].reputation.level;
 					var spamLevelText = "Not Spam";
 					
 					var lineType = this.props.callInfo.results[0].line_type;
-					lineType = lineType.replace(/([a-z])([A-Z])/g, '$1 $2');
+					if (lineType) {
+						lineType = lineType.replace(/([a-z])([A-Z])/g, '$1 $2');
+					}
+					
 					var carrier = this.props.callInfo.results[0].carrier;
 					var doNotCallText = "Not Registered"; 
 					if (this.props.callInfo.results[0].do_not_call) {
