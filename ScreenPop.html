@@ -193,6 +193,7 @@
 					var spamLevelText = "Not Spam";
 					
 					var lineType = this.props.callInfo.results[0].line_type;
+					lineType = lineType.replace(/([a-z])([A-Z])/g, '$1 $2');
 					var carrier = this.props.callInfo.results[0].carrier;
 					var doNotCallText = "Not Registered"; 
 					if (this.props.callInfo.results[0].do_not_call) {
