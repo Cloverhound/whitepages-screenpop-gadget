@@ -164,9 +164,9 @@
 						return <div id="summary"></div>
 						
 					var name = "Unknown";
-					var gender = null;
-					var ageStart = null;
-					var ageEnd = null;
+					var gender = "";
+					var ageStart = "";
+					var ageEnd = "";
 					var demographics = "Unknown";
 					if (this.props.callInfo.results[0].belongs_to[0]) {
 						name = this.props.callInfo.results[0].belongs_to[0].best_name ||
