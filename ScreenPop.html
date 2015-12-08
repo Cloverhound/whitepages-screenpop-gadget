@@ -172,8 +172,10 @@
 						name = this.props.callInfo.results[0].belongs_to[0].best_name ||
 								this.props.callInfo.results[0].belongs_to[0].name;
 						gender = this.props.callInfo.results[0].belongs_to[0].gender;
-						ageStart = this.props.callInfo.results[0].belongs_to[0].age_range.start;
-						ageEnd = this.props.callInfo.results[0].belongs_to[0].age_range.end;
+						if (this.props.callInfo.results[0].belongs_to[0].age_range) {
+							ageStart = this.props.callInfo.results[0].belongs_to[0].age_range.start;
+							ageEnd = this.props.callInfo.results[0].belongs_to[0].age_range.end;
+						}
 						
 						demographics = gender + ", " + ageStart + "-" + ageEnd;
 					}
